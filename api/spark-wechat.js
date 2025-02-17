@@ -84,7 +84,7 @@ const emojiObj = {
   "/:cake": "蛋糕",
   "/:li": "闪电劈你"
 };
-const keywordAutoReply = JSON.parse(process.env.KEYWORD_REPLAY);
+const keywordAutoReply = parseAndAssign(process.env.KEYWORD_REPLAY)
 module.exports = async function (request, response) {
   const method = request.method;
   const timestamp = request.query.timestamp;
@@ -117,6 +117,16 @@ module.exports = async function (request, response) {
   console.log("收到消息类型：" + MsgType);
   let Content;
   const timeNow = Math.floor(Date.now() / 1000);
+  if (MsgType === 'voice') {
+    console.log("暂不支持语音类型消息");
+    response.status(200).send(formatReply(
+      FromUserName,
+      ToUserName,
+      timeNow,
+      "暂不支持语音类型消息"
+    ));
+    return;
+  }
   if (MsgType === 'text') {
     Content = textMsg.xml.Content[0];
     console.log("收到文本消息：" + Content)
@@ -325,4 +335,14 @@ function hmacWithShaTobase64(algorithm, data, key) {
   hmac.update(data);
   const encodeData = hmac.digest();
   return Buffer.from(encodeData).toString('base64');
+}
+function parseAndAssign(jsonString) {
+  const parsedObject = JSON.parse(jsonString);
+  const resultObject = {};
+  Object.entries(parsedObject).forEach(([compoundKey, value]) => {
+      compoundKey.split(',').forEach(key => {
+          resultObject[key.trim()] = value;
+      });
+  });
+  return resultObject;
 }
